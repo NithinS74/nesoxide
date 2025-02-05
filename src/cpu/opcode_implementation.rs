@@ -61,6 +61,7 @@ impl CPU {
     pub fn interpret(&mut self) {
         loop {
             let opcode: u8 = self.mem_read(self.program_counter);
+            println!("op: {:X}", opcode);
             self.program_counter += 1;
             match opcode {
                 //INX implied opcode
@@ -68,6 +69,53 @@ impl CPU {
                     self.register_x = self.register_x.wrapping_add(1);
                     self.set_zero_flag(self.register_x);
                     self.set_negetive_flag(self.register_x);
+                }
+                //AND immediate
+                0x29 => {
+                    let address = self.get_operand_address(&AddressingMode::Immediate);
+                    self.and(address);
+                }
+                //AND ZeroPage
+                0x25 => {
+                    let address = self.get_operand_address(&AddressingMode::ZeroPage);
+                    self.and(address);
+                }
+                //AND ZeroPageX
+                0x35 => {
+                    let address = self.get_operand_address(&AddressingMode::ZeroPageX);
+                    self.and(address);
+                }
+                //AND Absolute
+                0x2D => {
+                    let address = self.get_operand_address(&AddressingMode::Absolute);
+                    self.and(address);
+                }
+                //AND AbsoluteX
+                0x3D => {
+                    let address = self.get_operand_address(&AddressingMode::AbsoluteX);
+                    self.and(address);
+                }
+                //AND AbsoluteY
+                0x39 => {
+                    let address = self.get_operand_address(&AddressingMode::AbsoluteY);
+                    self.and(address);
+                }
+                //AND IndirectX
+                0x21 => {
+                    let address = self.get_operand_address(&AddressingMode::IndirectX);
+                    self.and(address);
+                }
+                //AND IndirectY
+                0x31 => {
+                    let address = self.get_operand_address(&AddressingMode::IndirectY);
+                    self.and(address);
+                }
+                //ASL accumulator
+                0x0A => {
+                    self.set_carry_flag(self.register_a);
+                    self.register_a <<= 1;
+                    self.set_zero_flag(self.register_a);
+                    self.set_negetive_flag(self.register_a);
                 }
                 //Lda immediate opcode
                 0xA9 => {
@@ -127,6 +175,14 @@ impl CPU {
         }
     }
 
+    fn and(&mut self, address: u16) {
+        let value = self.mem_read(address);
+        println!("value addresed : {}", value);
+        self.register_a &= value;
+        self.set_zero_flag(self.register_a);
+        self.set_negetive_flag(self.register_a);
+    }
+
     fn lda(&mut self, address: u16) {
         let value = self.mem_read(address);
         self.register_a = value;
@@ -138,6 +194,7 @@ impl CPU {
         match mode {
             AddressingMode::Immediate => {
                 self.program_counter += 1;
+                println!("pc: {}", self.program_counter - 1);
                 self.program_counter - 1
             }
 
@@ -217,17 +274,25 @@ impl CPU {
 
     fn set_zero_flag(&mut self, value: u8) {
         if value == 0 {
-            self.status_register |= 0b0000_0010;
+            self.status_register |= ZERO;
         } else {
-            self.status_register &= 0b1111_1101;
+            self.status_register &= !ZERO;
+        }
+    }
+
+    fn set_carry_flag(&mut self, value: u8) {
+        if value & NEGETIVE == NEGETIVE {
+            self.status_register |= NEGETIVE;
+        } else {
+            self.status_register &= !NEGETIVE;
         }
     }
 
     fn set_negetive_flag(&mut self, value: u8) {
-        if value & 0b1000_0000 == 0b1000_0000 {
-            self.status_register |= 0b1000_0000;
+        if value & NEGETIVE == NEGETIVE {
+            self.status_register |= NEGETIVE;
         } else {
-            self.status_register &= 0b0111_1111;
+            self.status_register &= !NEGETIVE;
         }
         return;
     }
