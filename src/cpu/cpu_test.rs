@@ -88,14 +88,12 @@ fn test_0x29_and_opcode() {
     cpu.interpret();
     assert_eq!(cpu.register_a, 0x08);
     //AND ZeroPage
-    println!("reached");
     let addr = set_zeropage_value(&mut cpu, test_value);
     cpu.load_program(vec![0x25, addr, 0x00]);
     cpu.reset();
     cpu.register_a = value;
     cpu.interpret();
     assert_eq!(cpu.register_a, 0x08);
-    println!("reached");
     //AND ZeroPageX
     let addr = set_zeropage_value(&mut cpu, test_value);
     cpu.load_program(vec![0x35, addr, 0x00]);
@@ -118,7 +116,6 @@ fn test_0x29_and_opcode() {
     cpu.interpret();
     assert_eq!(cpu.register_a, 0x08);
     //AND AbsoluteY
-    println!("reached");
     let (x, y) = set_absolute_value(&mut cpu, test_value);
     cpu.load_program(vec![0x39, x, y, 0x00]);
     cpu.reset();
@@ -133,11 +130,112 @@ fn test_0x29_and_opcode() {
     cpu.interpret();
     assert_eq!(cpu.register_a, 0x08);
     //AND IndirectY
-    println!("reached");
     let addr = set_indirect_value(&mut cpu, test_value);
     cpu.load_program(vec![0x31, addr, 0x00]);
     cpu.reset();
     cpu.register_a = value;
+    cpu.interpret();
+    assert_eq!(cpu.register_a, 0x08);
+}
+
+#[test]
+fn test_0x0a_asl_opcode() {
+    let mut cpu = CPU::new();
+    let test_value = 0xFF;
+    let assert_value = 0xFE;
+    //asl accumulator
+    cpu.load_program(vec![0x0a, 0x00]);
+    cpu.reset();
+    cpu.register_a = 1u8;
+    cpu.interpret();
+    assert!(cpu.register_a == 0b10);
+    //asl accumulator overflow
+    cpu.reset();
+    cpu.register_a = test_value;
+    cpu.interpret();
+    assert!(cpu.register_a == assert_value);
+    let x = (CARRY | NEGETIVE) & !ZERO;
+    println!("{:b} {:b}", x, cpu.status_register);
+    assert!(cpu.status_register == x);
+    //asl ZeroPage
+    let addr = set_zeropage_value(&mut cpu, test_value);
+    cpu.load_program(vec![0x06, addr, 0x00]);
+    cpu.reset();
+    cpu.interpret();
+    assert!(cpu.mem_read(addr as u16) == assert_value);
+    //asl ZeroPageX
+    let addr = set_zeropage_value(&mut cpu, test_value);
+    cpu.load_program(vec![0x16, addr, 0x00]);
+    cpu.reset();
+    cpu.interpret();
+    assert!(cpu.mem_read(addr as u16) == assert_value);
+    //AND Absolute
+    let (x, y) = set_absolute_value(&mut cpu, test_value);
+    cpu.load_program(vec![0x0E, x, y, 0x00]);
+    cpu.reset();
+    cpu.interpret();
+    assert_eq!(cpu.mem_read(u16::from_le_bytes([x, y])), assert_value);
+    //AND AbsoluteX
+    let (x, y) = set_absolute_value(&mut cpu, test_value);
+    cpu.load_program(vec![0x1E, x, y, 0x00]);
+    cpu.reset();
+    cpu.interpret();
+    assert_eq!(cpu.mem_read(u16::from_le_bytes([x, y])), assert_value);
+}
+
+#[test]
+fn test_0x24_bit_opcode() {
+    let mut cpu = CPU::new();
+    let test_value = 0b11000010;
+    let assert_value = 0b11000000;
+    //ZeroPage
+    let addr = set_zeropage_value(&mut cpu, test_value);
+    cpu.load_program(vec![0x24, addr, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0b00000011;
+    cpu.interpret();
+    assert_eq!(cpu.status_register, assert_value);
+    //Absolute
+    // let (x, y) = set_absolute_value(&mut cpu, 0x00);
+    // cpu.load_program(vec![0x2c, x, y, 0x00]);
+    // cpu.reset();
+    // cpu.register_a = 0b00000011;
+    // cpu.interpret();
+    // assert_eq!(cpu.status_register, ZERO);
+}
+
+#[test]
+fn test_0xf0_bcs_opcode() {
+    let mut cpu = CPU::new();
+    //BCS relative
+    cpu.load_program(vec![0xf0, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.status_register |= ZERO;
+    cpu.interpret();
+    assert!(cpu.register_a == 0x04);
+    //BCS relative
+    cpu.load_program(vec![0xf0, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.interpret();
+    assert_eq!(cpu.register_a, 0x08);
+}
+
+#[test]
+fn test_0xb0_bcs_opcode() {
+    let mut cpu = CPU::new();
+    //BCS relative
+    cpu.load_program(vec![0xb0, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.status_register |= CARRY;
+    cpu.interpret();
+    assert!(cpu.register_a == 0x04);
+    //BCS relative
+    cpu.load_program(vec![0xb0, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
     cpu.interpret();
     assert_eq!(cpu.register_a, 0x08);
 }

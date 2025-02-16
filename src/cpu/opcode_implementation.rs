@@ -117,6 +117,44 @@ impl CPU {
                     self.set_zero_flag(self.register_a);
                     self.set_negetive_flag(self.register_a);
                 }
+                //ASL ZeroPage
+                0x06 => {
+                    let address = self.get_operand_address(&AddressingMode::ZeroPage);
+                    self.asl(address);
+                }
+                //ASL ZeroPageX
+                0x16 => {
+                    let address = self.get_operand_address(&AddressingMode::ZeroPageX);
+                    self.asl(address);
+                }
+                //ASL AbsoluteX
+                0x0E => {
+                    let address = self.get_operand_address(&AddressingMode::Absolute);
+                    self.asl(address);
+                }
+                //ASL AbsoluteX
+                0x1E => {
+                    let address = self.get_operand_address(&AddressingMode::Absolute);
+                    self.asl(address);
+                }
+                //BCS relative
+                0xB0 => {
+                    self.branch_if_true(self.status_register & CARRY == CARRY);
+                }
+                //BEQ relative
+                0xF0 => {
+                    self.branch_if_true(self.status_register & ZERO == ZERO);
+                }
+                //BIT bit test ZeroPage
+                0x24 => {
+                    let address = self.get_operand_address(&AddressingMode::ZeroPage);
+                    self.bit(address);
+                }
+                //BIT bit test Absolute
+                0x2C => {
+                    let address = self.get_operand_address(&AddressingMode::Absolute);
+                    self.bit(address);
+                }
                 //Lda immediate opcode
                 0xA9 => {
                     let address = self.get_operand_address(&AddressingMode::Immediate);
@@ -175,9 +213,26 @@ impl CPU {
         }
     }
 
+    fn branch_if_true(&mut self, value: bool) {
+        if value {
+            let address = self.get_operand_address(&AddressingMode::Immediate);
+            let value = self.mem_read(address);
+            self.program_counter += (value - 1) as u16;
+        } else {
+            self.program_counter += 1;
+        }
+    }
+    fn asl(&mut self, address: u16) {
+        let mut mem_value = self.mem_read(address);
+        self.set_carry_flag(mem_value);
+        mem_value <<= 1;
+        self.mem_write(address, mem_value);
+        self.set_zero_flag(mem_value);
+        self.set_negetive_flag(mem_value);
+    }
+
     fn and(&mut self, address: u16) {
         let value = self.mem_read(address);
-        println!("value addresed : {}", value);
         self.register_a &= value;
         self.set_zero_flag(self.register_a);
         self.set_negetive_flag(self.register_a);
@@ -190,11 +245,18 @@ impl CPU {
         self.set_negetive_flag(value);
     }
 
+    fn bit(&mut self, address: u16) {
+        let value = self.mem_read(address);
+        let result = self.register_a & value;
+        self.set_zero_flag(result);
+        self.set_negetive_flag(value);
+        self.set_overflow_flag(value);
+    }
+
     fn get_operand_address(&mut self, mode: &AddressingMode) -> u16 {
         match mode {
             AddressingMode::Immediate => {
                 self.program_counter += 1;
-                println!("pc: {}", self.program_counter - 1);
                 self.program_counter - 1
             }
 
@@ -272,6 +334,13 @@ impl CPU {
         self.memory[addr as usize] = value;
     }
 
+    fn set_overflow_flag(&mut self, value: u8) {
+        if value & OVERFLOW == OVERFLOW {
+            self.status_register |= OVERFLOW;
+        } else {
+            self.status_register &= OVERFLOW;
+        }
+    }
     fn set_zero_flag(&mut self, value: u8) {
         if value == 0 {
             self.status_register |= ZERO;
@@ -282,9 +351,9 @@ impl CPU {
 
     fn set_carry_flag(&mut self, value: u8) {
         if value & NEGETIVE == NEGETIVE {
-            self.status_register |= NEGETIVE;
+            self.status_register |= CARRY;
         } else {
-            self.status_register &= !NEGETIVE;
+            self.status_register &= !CARRY;
         }
     }
 
