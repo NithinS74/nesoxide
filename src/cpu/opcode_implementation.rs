@@ -145,6 +145,18 @@ impl CPU {
                 0xF0 => {
                     self.branch_if_true(self.status_register & ZERO == ZERO);
                 }
+                //BMI relative
+                0x30 => {
+                    self.branch_if_true(self.status_register & NEGETIVE == NEGETIVE);
+                }
+                //BNE relative
+                0xD0 => {
+                    self.branch_if_true(!(self.status_register & ZERO == ZERO));
+                }
+                //BPL relative
+                0x10 => {
+                    self.branch_if_true(!(self.status_register & NEGETIVE == NEGETIVE));
+                }
                 //BIT bit test ZeroPage
                 0x24 => {
                     let address = self.get_operand_address(&AddressingMode::ZeroPage);
@@ -338,7 +350,7 @@ impl CPU {
         if value & OVERFLOW == OVERFLOW {
             self.status_register |= OVERFLOW;
         } else {
-            self.status_register &= OVERFLOW;
+            self.status_register &= !OVERFLOW;
         }
     }
     fn set_zero_flag(&mut self, value: u8) {

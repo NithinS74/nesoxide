@@ -196,12 +196,67 @@ fn test_0x24_bit_opcode() {
     cpu.interpret();
     assert_eq!(cpu.status_register, assert_value);
     //Absolute
-    // let (x, y) = set_absolute_value(&mut cpu, 0x00);
-    // cpu.load_program(vec![0x2c, x, y, 0x00]);
-    // cpu.reset();
-    // cpu.register_a = 0b00000011;
-    // cpu.interpret();
-    // assert_eq!(cpu.status_register, ZERO);
+    let (x, y) = set_absolute_value(&mut cpu, 0x00);
+    cpu.load_program(vec![0x2c, x, y, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0b00000011;
+    cpu.interpret();
+    println!("set value {:?}", cpu.status_register);
+    assert_eq!(cpu.status_register, ZERO);
+}
+
+#[test]
+fn test_0x10_bpl_opcode() {
+    let mut cpu = CPU::new();
+    //BMI relative
+    cpu.load_program(vec![0x10, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.interpret();
+    assert!(cpu.register_a == 0x04);
+    //BMI relative
+    cpu.load_program(vec![0x10, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.status_register |= NEGETIVE;
+    cpu.register_a = 0x04;
+    cpu.interpret();
+    assert_eq!(cpu.register_a, 0x08);
+}
+
+#[test]
+fn test_0xd0_bne_opcode() {
+    let mut cpu = CPU::new();
+    //BMI relative
+    cpu.load_program(vec![0xd0, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.interpret();
+    assert!(cpu.register_a == 0x04);
+    //BMI relative
+    cpu.load_program(vec![0xd0, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.status_register |= ZERO;
+    cpu.register_a = 0x04;
+    cpu.interpret();
+    assert_eq!(cpu.register_a, 0x08);
+}
+
+#[test]
+fn test_0x30_bmi_opcode() {
+    let mut cpu = CPU::new();
+    //BMI relative
+    cpu.load_program(vec![0x30, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.status_register |= NEGETIVE;
+    cpu.interpret();
+    assert!(cpu.register_a == 0x04);
+    //BMI relative
+    cpu.load_program(vec![0x30, 0x04, 0xa9, 0x08, 0x00]);
+    cpu.reset();
+    cpu.register_a = 0x04;
+    cpu.interpret();
+    assert_eq!(cpu.register_a, 0x08);
 }
 
 #[test]
